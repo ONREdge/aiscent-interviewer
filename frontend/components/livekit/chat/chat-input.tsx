@@ -13,7 +13,7 @@ export function ChatInput({ onSend, className, disabled, ...props }: ChatInputPr
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    props.onSubmit?.(e);
+    props.onSubmit?.(e as Parameters<NonNullable<typeof props.onSubmit>>[0]);
     onSend?.(message);
     setMessage('');
   };
