@@ -1,0 +1,302 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* ---------------------------------------------------------------------------
+ * Base theme tokens
+ * The AiSCENT interface uses its own palette scoped by `.aiscent-theme`, but
+ * the retained shared UI components (Button, Alert, Toaster, Toggle, etc.)
+ * still reference the base Tailwind tokens below, so we keep them intact.
+ * -------------------------------------------------------------------------*/
+:root {
+  --fg0: #000000;
+  --fg1: #3b3b3b;
+  --fg2: #4d4d4d;
+  --fg3: #636363;
+  --fg4: #707070;
+  --fgSerious: #db1b06;
+  --fgSuccess: #006430;
+  --fgModerate: #a65006;
+  --fgAccent: #002cf2;
+
+  --bg1: #f9f9f6;
+  --bg2: #f3f3f1;
+  --bg3: #e2e2df;
+  --bgSerious: #fae6e6;
+  --bgSerious2: #ffcdc7;
+  --bgSuccess: #d1fadf;
+  --bgModerate: #faedd1;
+  --bgAccent: #b3ccff;
+  --bgAccentPrimary: #e2ebfd;
+
+  --separator1: #dbdbd8;
+  --separator2: #bdbdbb;
+  --separatorSerious: #ffcdc7;
+  --separatorSuccess: #94dcb5;
+  --separatorModerate: #fbd7a0;
+  --separatorAccent: #b3ccff;
+
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #1565e2;
+  --primary-hover: #0f4bb7;
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: #f3f3f1;
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+@theme inline {
+  --color-fg1: var(--fg1);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--separator1);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-button: var(--bg2);
+  --color-button-hover: var(--bg3);
+  --color-button-foreground: var(--fg1);
+  --color-button-primary: var(--bg2);
+  --color-button-primary-foreground: var(--fgSerious);
+  --color-button-secondary: var(--bgAccentPrimary);
+  --color-button-secondary-foreground: var(--fgAccent);
+  --color-button-selected: var(--bgAccentPrimary);
+  --color-button-border: var(--separator1);
+  --color-button-border-selected: var(--separatorAccent);
+
+  --color-destructive: var(--bgSerious);
+  --color-destructive-hover: var(--bgSerious2);
+  --color-destructive-foreground: var(--fgSerious);
+  --color-destructive-border: var(--separatorSerious);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Utility keyframe used by aiscent-session-view (thinking state indicator).
+ * -------------------------------------------------------------------------*/
+@layer utils {
+  .animate-text-shimmer {
+    animation-delay: 0.5s;
+    animation-duration: 3s;
+    animation-iteration-count: infinite;
+    animation-name: text-shimmer;
+    background: var(--muted-foreground)
+      gradient(
+        linear,
+        100% 0,
+        0 0,
+        from(var(--muted-foreground)),
+        color-stop(0.5, var(--secondary-foreground)),
+        to(var(--muted-foreground))
+      );
+    background: var(--muted-foreground)
+      -webkit-gradient(
+        linear,
+        100% 0,
+        0 0,
+        from(var(--muted-foreground)),
+        color-stop(0.5, var(--secondary-foreground)),
+        to(var(--muted-foreground))
+      );
+    background-repeat: no-repeat;
+    background-size: 50% 200%;
+    display: inline-block;
+  }
+
+  @keyframes text-shimmer {
+    0% {
+      background-position: -100% 0;
+    }
+    100% {
+      background-position: 250% 0;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * AiSCENT theme — scoped to `.aiscent-theme`.
+ * Provides the Ascent palette and the four keyframes the mountain UI uses.
+ * -------------------------------------------------------------------------*/
+.aiscent-theme {
+  --ascent-blue: #1565e2;
+  --deep-navy: #1b3b72;
+  --mountain: #28313e;
+  --summit-snow: #f3f7fc;
+  --page-cream: #f7f5f1;
+  --page-sand: #efebe3;
+  --separator: #e4dfd6;
+  --ink: #14181d;
+  --ink-2: #28313e;
+  --ink-muted: #4a5563;
+  --ink-subtle: #8a8378;
+  --signal-teal: #0e8e8c;
+  --route-gold: #c9a227;
+  --ascent-red: #c13020;
+  --meadow: #7faeba;
+  --sunrise: #f6c59d;
+  background: var(--page-cream);
+  color: var(--ink-2);
+  font-family: var(--font-space-grotesk), 'Space Grotesk', system-ui, sans-serif;
+}
+
+.aiscent-theme h1,
+.aiscent-theme h2,
+.aiscent-theme .font-editorial {
+  font-family: var(--font-poppins), 'Poppins', system-ui, sans-serif;
+}
+
+@keyframes aiscentDrawRoute {
+  from {
+    stroke-dashoffset: 1400;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes aiscentRoutePulse {
+  from {
+    stroke-dashoffset: 1240;
+  }
+  to {
+    stroke-dashoffset: -160;
+  }
+}
+
+@keyframes aiscentSummitPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.9);
+  }
+}
+
+@keyframes aiscentNodeBreathe {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes aiscentGentlePulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+
+/*
+ * AISCENT responsive overrides.
+ * Every offending inline `style={{...}}` on the AISCENT screens gets a stable
+ * class hook so these media queries can override with `!important` (inline
+ * styles otherwise win the specificity war). Scoped to `.aiscent-theme`.
+ */
+@media (max-width: 640px) {
+  .aiscent-theme .aiscent-header-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .aiscent-theme .aiscent-tagline {
+    display: none !important;
+  }
+  .aiscent-theme .aiscent-accent-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .aiscent-theme .aiscent-accent-grid > * {
+    padding: 16px 0 0 !important;
+  }
+  .aiscent-theme .aiscent-session-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .aiscent-theme .aiscent-camp-title {
+    word-break: break-word;
+  }
+  .aiscent-theme .aiscent-end-btn {
+    width: 100% !important;
+  }
+  .aiscent-theme .aiscent-waypoint {
+    width: 108px !important;
+    height: 108px !important;
+  }
+  .aiscent-theme .aiscent-level-pill {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .aiscent-theme .aiscent-snapshot-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .aiscent-theme .aiscent-agent-state-pill {
+    display: none !important;
+  }
+  .aiscent-theme .aiscent-frosted[data-mobile-padding] {
+    padding: var(--aiscent-mobile-padding, 24px 20px) !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  .aiscent-theme .aiscent-accent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .aiscent-theme .aiscent-snapshot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .aiscent-theme .aiscent-control-bar-inner {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  .aiscent-theme .aiscent-route-label {
+    display: none;
+  }
+}
