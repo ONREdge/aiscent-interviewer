@@ -606,6 +606,23 @@ async def entrypoint(ctx: JobContext):
         except Exception as e:
             print(f"[AISCENT] ⚠ shutdown failed (non-fatal): {e}")
 
+    async def _camp_n_completion_watchdog(delay_s: float = 30.0) -> None:
+        """Defensive backstop for the observed failure mode where the LLM
+        scores Camp N (the final camp) but never emits the
+        `complete_interview` tool call — instead speaking meta-instructions
+        ("Note the interview has concluded..."). Idempotent:
+        `_finalize_and_deliver` guards against double-firing, so if the LLM
+        eventually calls the tool, this becomes a no-op."""
+        await asyncio.sleep(delay_s)
+        if aiscent_finalized:
+            return
+        print(
+            f"[AISCENT_WATCHDOG] Camp N scored but complete_interview not "
+            f"called after {delay_s}s — auto-finalizing"
+        )
+        aiscent_state["sequencing_flags"].append("auto_completed_no_tool_call")
+        await _finalize_and_deliver("complete_interview")
+
     # ------------------------------------------------------------------
     # Event handlers.
     # ------------------------------------------------------------------
@@ -788,6 +805,12 @@ async def entrypoint(ctx: JobContext):
                     print(
                         f"[AISCENT] recorded score for camp {camp_id}: L{level} {descriptor}"
                     )
+                    # Auto-finalize watchdog: if this was the final camp,
+                    # ensure the session finalizes even when the LLM fails
+                    # to call `complete_interview` after speaking the closing
+                    # sentence.
+                    if camp_id == aiscent_camps.CAMP_ORDER[-1]:
+                        asyncio.create_task(_camp_n_completion_watchdog())
 
             elif fn_name == "advance_to_next_camp":
                 last_camp = None
