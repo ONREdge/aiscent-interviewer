@@ -225,7 +225,7 @@ async def entrypoint(ctx: JobContext):
             _aiscent_session_uuid = _identity[len("aiscent_user_"):] or None
             _dispatch_source = "identity_fallback"
             print(f"[AISCENT_ROUTING] identity prefix matched: {_identity}")
-        if _meta_raw:
+        if _meta_raw: 
             try:
                 _meta_json = json.loads(_meta_raw)
                 if _meta_json.get("aiscent_type") == "true":
