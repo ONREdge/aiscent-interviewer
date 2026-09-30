@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocalParticipant, useVoiceAssistant } from '@livekit/components-react';
 
-const UNMUTE_DEBOUNCE_MS = 200;
+const UNMUTE_DEBOUNCE_MS = 200; 
 
 export function AiscentAutoMute() {
   const { state } = useVoiceAssistant();

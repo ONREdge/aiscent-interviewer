@@ -7,7 +7,7 @@ const ONE_MINUTE_IN_MILLISECONDS = 60 * 1000;
 
 function generateSessionId(): string {
   return `aiscent-${Math.floor(Math.random() * 1_000_000)}-${Date.now()}`;
-}
+} 
 
 export default function useAiscentConnectionDetails() {
   const [connectionDetails, setConnectionDetails] =

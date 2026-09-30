@@ -8,7 +8,7 @@
  * still reference the base Tailwind tokens below, so we keep them intact.
  * -------------------------------------------------------------------------*/
 :root {
-  --fg0: #000000;
+  --fg0: #000000; 
   --fg1: #3b3b3b;
   --fg2: #4d4d4d;
   --fg3: #636363;

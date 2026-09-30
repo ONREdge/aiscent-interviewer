@@ -7,7 +7,7 @@ import { AiscentFrostedCard } from '@/components/aiscent/aiscent-frosted-card';
 interface AiscentWelcomeProps {
   onStart: () => void;
   className?: string;
-}
+} 
 
 interface AccentColumn {
   label: string;

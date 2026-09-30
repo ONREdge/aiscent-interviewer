@@ -5,7 +5,7 @@ export async function downloadAiscentPdf(
   const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
     import('html2canvas-pro'),
     import('jspdf'),
-  ]);
+  ]); 
 
   const hidden = Array.from(
     el.querySelectorAll<HTMLElement>('[data-pdf-hide="true"]'),

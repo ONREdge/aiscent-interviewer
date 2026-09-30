@@ -8,7 +8,7 @@ import { AiscentFrostedCard } from '@/components/aiscent/aiscent-frosted-card';
 export interface AiscentIdentity {
   first_name: string;
   last_name: string;
-  email: string;
+  email: string; 
 }
 
 interface AiscentIdentityFormProps {

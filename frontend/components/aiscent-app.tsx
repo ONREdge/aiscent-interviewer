@@ -59,7 +59,7 @@ export function AiscentApp() {
   }, [activeCampId]);
 
   const {
-    connectionDetails,
+    connectionDetails, 
     sessionUUID,
     startWithIdentity,
     refreshConnectionDetails,

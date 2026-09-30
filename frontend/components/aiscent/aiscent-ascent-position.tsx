@@ -7,7 +7,7 @@ import { AiscentFrostedCard } from '@/components/aiscent/aiscent-frosted-card';
 import { AiscentRouteMap } from '@/components/aiscent/aiscent-route-map';
 import {
   AISCENT_CAMPS,
-  AISCENT_CAMP_ORDER,
+  AISCENT_CAMP_ORDER, 
   type AiscentCampId,
   type AscentPosition,
   type AscentSnapshotRow,

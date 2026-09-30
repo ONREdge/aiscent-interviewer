@@ -6,7 +6,7 @@ import { ConnectionState } from 'livekit-client';
 import {
   useConnectionState,
   useVoiceAssistant,
-  type AgentState,
+  type AgentState, 
 } from '@livekit/components-react';
 import { AiscentControlBar } from '@/components/aiscent/aiscent-control-bar';
 import { AiscentMountainRidges } from '@/components/aiscent/aiscent-mountain-ridges';
