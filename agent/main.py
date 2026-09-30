@@ -216,6 +216,26 @@ async def entrypoint(ctx: JobContext):
     _aiscent_detected = False
     _aiscent_session_uuid: Optional[str] = None
     _dispatch_source: Optional[str] = None
+    # Participant identity captured from the pre-interview form (embedded in
+    # the LiveKit JWT metadata by /api/aiscent-connection-details). Absent
+    # when the room is joined without going through the form (cold worker
+    # debug flows, tests, etc.), in which case we keep the fields None so the
+    # downstream payload shape stays stable.
+    _participant_first_name: Optional[str] = None
+    _participant_last_name: Optional[str] = None
+    _participant_email: Optional[str] = None
+
+    def _capture_participant_identity(meta_json: dict) -> None:
+        nonlocal _participant_first_name, _participant_last_name, _participant_email
+        fn = meta_json.get("first_name")
+        ln = meta_json.get("last_name")
+        em = meta_json.get("email")
+        if isinstance(fn, str) and fn.strip() and not _participant_first_name:
+            _participant_first_name = fn.strip()
+        if isinstance(ln, str) and ln.strip() and not _participant_last_name:
+            _participant_last_name = ln.strip()
+        if isinstance(em, str) and em.strip() and not _participant_email:
+            _participant_email = em.strip()
 
     for _p in _iter_remote_participants(my_room):
         _identity = getattr(_p, "identity", None) or ""
@@ -225,7 +245,7 @@ async def entrypoint(ctx: JobContext):
             _aiscent_session_uuid = _identity[len("aiscent_user_"):] or None
             _dispatch_source = "identity_fallback"
             print(f"[AISCENT_ROUTING] identity prefix matched: {_identity}")
-        if _meta_raw: 
+        if _meta_raw:
             try:
                 _meta_json = json.loads(_meta_raw)
                 if _meta_json.get("aiscent_type") == "true":
@@ -237,6 +257,7 @@ async def entrypoint(ctx: JobContext):
                         f"[AISCENT_ROUTING] JWT metadata aiscent_type=true "
                         f"(session_uuid={_aiscent_session_uuid})"
                     )
+                _capture_participant_identity(_meta_json)
             except (json.JSONDecodeError, TypeError):
                 pass
         if _aiscent_detected:
@@ -266,6 +287,7 @@ async def entrypoint(ctx: JobContext):
                         if not _aiscent_session_uuid:
                             _aiscent_session_uuid = meta_json.get("session_uuid")
                         _dispatch_source = "jwt_metadata"
+                    _capture_participant_identity(meta_json)
                 except (json.JSONDecodeError, TypeError):
                     pass
             if matched:
@@ -307,6 +329,10 @@ async def entrypoint(ctx: JobContext):
         f"[AISCENT_ROUTING] session_uuid={_aiscent_session_uuid} "
         f"dispatch_source={_dispatch_source}"
     )
+    print(
+        f"[AISCENT_ROUTING] participant first_name={_participant_first_name!r} "
+        f"last_name={_participant_last_name!r} email={_participant_email!r}"
+    )
     print("=" * 80 + "\n")
 
     aiscent_finalized = False
@@ -318,6 +344,14 @@ async def entrypoint(ctx: JobContext):
         "ended_at": None,
         "duration_seconds": None,
         "end_reason": None,
+        # Populated from the pre-interview identity form via JWT metadata.
+        # All three fields default to None so the downstream payload shape
+        # stays stable when the form is skipped.
+        "participant": {
+            "first_name": _participant_first_name,
+            "last_name": _participant_last_name,
+            "email": _participant_email,
+        },
         "camp_scores": {},
         "sequencing_flags": [],
         "ascent_position": None,
