@@ -3,7 +3,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'AiSCENT — CX Maturity Interview',
-  description: 'A short voice interview that produces your Ascent Position.',
+  description: 'A short voice interview that produces your AiSCENT Position.',
 };
 
 export default function RootLayout({

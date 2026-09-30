@@ -252,6 +252,9 @@
   .aiscent-theme .aiscent-accent-grid > * {
     padding: 16px 0 0 !important;
   }
+  .aiscent-theme .aiscent-identity-grid {
+    grid-template-columns: 1fr !important;
+  }
   .aiscent-theme .aiscent-session-header {
     flex-direction: column !important;
     align-items: stretch !important;

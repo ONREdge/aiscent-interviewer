@@ -6,7 +6,6 @@ import { AiscentFrostedCard } from '@/components/aiscent/aiscent-frosted-card';
 
 interface AiscentWelcomeProps {
   onStart: () => void;
-  disabled?: boolean;
   className?: string;
 }
 
@@ -28,15 +27,14 @@ const COLUMNS: AccentColumn[] = [
     body: "There are no right or wrong answers! You're mapping where your company stands today.",
   },
   {
-    label: 'YOUR ASCENT POSITION',
+    label: 'YOUR AiSCENT POSITION',
     color: '#C9A227',
-    body: "It's voice-only. You'll receive an on-screen Ascent Position at the end.",
+    body: "It's voice-only. You'll receive an on-screen AiSCENT Position at the end.",
   },
 ];
 
 export function AiscentWelcome({
   onStart,
-  disabled,
   className,
 }: AiscentWelcomeProps) {
   return (
@@ -129,7 +127,7 @@ export function AiscentWelcome({
                   color: '#FFFFFF',
                 }}
               >
-                AISCENT · TIER 1 DIAGNOSTIC
+                AiSCENT · TIER 1 DIAGNOSTIC
               </span>
             </div>
 
@@ -176,7 +174,7 @@ export function AiscentWelcome({
               }}
             >
               After finishing the interview, you&apos;ll receive your on-screen{' '}
-              <b style={{ color: '#1B3B72', fontWeight: 700 }}>Ascent Position</b>{''}:
+              <b style={{ color: '#1B3B72', fontWeight: 700 }}>AiSCENT Position</b>{''}:
               a snapshot of where you stand on the route to customer-led
               growth.
             </p>
@@ -223,7 +221,6 @@ export function AiscentWelcome({
 
             <button
               onClick={onStart}
-              disabled={disabled}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -238,13 +235,11 @@ export function AiscentWelcome({
                 fontSize: 15,
                 fontWeight: 700,
                 letterSpacing: 0.5,
-                cursor: disabled ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 boxShadow: '0 12px 28px rgba(21,101,226,0.30)',
                 transition: 'transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease',
-                opacity: disabled ? 0.55 : 1,
               }}
               onMouseEnter={(e) => {
-                if (disabled) return;
                 (e.currentTarget as HTMLButtonElement).style.transform =
                   'translateY(-1px)';
                 (e.currentTarget as HTMLButtonElement).style.boxShadow =

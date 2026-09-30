@@ -138,7 +138,7 @@ export function AiscentSessionView({
                     color: '#1B3B72',
                   }}
                 >
-                  AISCENT · CX MATURITY INTERVIEW
+                  AiSCENT · CX MATURITY INTERVIEW
                 </div>
                 <h2
                   className="aiscent-camp-title"

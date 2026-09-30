@@ -2,13 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Room, RoomEvent } from 'livekit-client';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { RoomAudioRenderer, RoomContext, StartAudio } from '@livekit/components-react';
 import { toastAlert } from '@/components/alert-toast';
 import { Toaster } from '@/components/ui/sonner';
 import { AiscentWelcome } from '@/components/aiscent/aiscent-welcome';
+import {
+  AiscentIdentityForm,
+  type AiscentIdentity,
+} from '@/components/aiscent/aiscent-identity-form';
 import { AiscentSessionView } from '@/components/aiscent/aiscent-session-view';
 import { AiscentAscentPosition } from '@/components/aiscent/aiscent-ascent-position';
+import { AiscentAutoMute } from '@/components/aiscent/aiscent-auto-mute';
 import { AiscentMountainRidges } from '@/components/aiscent/aiscent-mountain-ridges';
 import useAiscentConnectionDetails from '@/hooks/useAiscentConnectionDetails';
 import { useAiscentAdvance } from '@/hooks/useAiscentAdvance';
@@ -21,12 +26,28 @@ import {
 } from '@/lib/aiscent-camps';
 
 const MotionAiscentWelcome = motion.create(AiscentWelcome);
+const MotionAiscentIdentityForm = motion.create(AiscentIdentityForm);
 
-type SessionPhase = 'welcome' | 'live' | 'ascent-position';
+type SessionPhase = 'welcome' | 'identity' | 'live' | 'ascent-position';
 
 export function AiscentApp() {
-  const room = useMemo(() => new Room(), []);
+  // Explicit acoustic-processing constraints. Browser defaults already enable
+  // AEC, but being explicit removes any ambiguity from third-party constraint
+  // merges and defends against the "agent hears itself and loops" failure
+  // mode reported on Safari/iOS.
+  const room = useMemo(
+    () =>
+      new Room({
+        audioCaptureDefaults: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      }),
+    []
+  );
   const [phase, setPhase] = useState<SessionPhase>('welcome');
+  const [participant, setParticipant] = useState<AiscentIdentity | null>(null);
   const [activeCampId, setActiveCampId] = useState<AiscentCampId | null>(null);
   const [completedCampIds, setCompletedCampIds] = useState<AiscentCampId[]>([]);
   const [ascentPosition, setAscentPosition] = useState<AscentPosition | null>(null);
@@ -40,6 +61,7 @@ export function AiscentApp() {
   const {
     connectionDetails,
     sessionUUID,
+    startWithIdentity,
     refreshConnectionDetails,
     existingOrRefreshConnectionDetails,
   } = useAiscentConnectionDetails();
@@ -83,6 +105,7 @@ export function AiscentApp() {
 
   const handleRestart = useCallback(() => {
     setPhase('welcome');
+    setParticipant(null);
     setActiveCampId(null);
     setCompletedCampIds([]);
     setAscentPosition(null);
@@ -110,6 +133,7 @@ export function AiscentApp() {
         // user isn't stuck on the live view.
         return 'welcome';
       });
+      setParticipant(null);
       setActiveCampId(null);
       setCompletedCampIds([]);
       refreshConnectionDetails();
@@ -155,11 +179,37 @@ export function AiscentApp() {
   }, [room, phase, existingOrRefreshConnectionDetails]);
 
   const handleStart = useCallback(() => {
-    setActiveCampId('A');
-    setPhase('live');
+    setPhase('identity');
   }, []);
 
-  if (!connectionDetails && phase !== 'ascent-position') {
+  const handleIdentityBack = useCallback(() => {
+    setPhase('welcome');
+  }, []);
+
+  const handleIdentitySubmit = useCallback(
+    (identity: AiscentIdentity) => {
+      setParticipant(identity);
+      setActiveCampId('A');
+      setPhase('live');
+      // Fire-and-forget: mint the LiveKit token with identity embedded in JWT
+      // metadata. Any error surfaces through the loading-gate + live useEffect
+      // path below (which will show the connect-error toast).
+      startWithIdentity(identity).catch((error) => {
+        toastAlert({
+          title:
+            'Sorry, there was an error preparing your interview. Please refresh the page and try again.',
+          description:
+            error instanceof Error ? `${error.name}: ${error.message}` : String(error),
+        });
+      });
+    },
+    [startWithIdentity]
+  );
+
+  // The connection-details fetch is now identity-gated (no auto-fetch on
+  // mount), so this loading screen only fires between identity submit and
+  // the token returning from /api/aiscent-connection-details.
+  if (phase === 'live' && !connectionDetails) {
     return (
       <main
         className="fixed inset-0 flex items-center justify-center overflow-hidden"
@@ -197,8 +247,15 @@ export function AiscentApp() {
   }
 
   const showWelcome = phase === 'welcome';
+  const showIdentity = phase === 'identity';
   const showLive = phase === 'live';
   const showAscentPosition = phase === 'ascent-position' && ascentPosition !== null;
+
+  // Suppress unused-var warning while still keeping the participant state
+  // accessible for future UI (e.g. rendering the person's name on the ascent
+  // position screen). The identity is threaded through the JWT metadata for
+  // the agent + backend; this variable is just the local mirror.
+  void participant;
 
   return (
     <main className="relative min-h-screen">
@@ -209,38 +266,51 @@ export function AiscentApp() {
           onRestart={handleRestart}
         />
       ) : (
-        <>
-          <MotionAiscentWelcome
-            key="aiscent-welcome"
-            onStart={handleStart}
-            disabled={!showWelcome}
-            initial={{ opacity: 1 }}
-            animate={{ opacity: showWelcome ? 1 : 0 }}
-            transition={{ duration: 0.4, ease: 'linear', delay: showWelcome ? 0 : 0.3 }}
-            className={showWelcome ? '' : 'pointer-events-none'}
-          />
+        <RoomContext.Provider value={room}>
+          <RoomAudioRenderer />
+          <StartAudio label="Start Audio" />
+          <AiscentAutoMute />
 
-          <RoomContext.Provider value={room}>
-            <RoomAudioRenderer />
-            <StartAudio label="Start Audio" />
-
-            <motion.div
-              key="aiscent-session"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: showLive ? 1 : 0 }}
-              transition={{ duration: 0.4, ease: 'linear', delay: showLive ? 0.3 : 0 }}
-              className={`fixed inset-0 z-20 ${showLive ? '' : 'pointer-events-none'}`}
-            >
-              {showLive && (
+          <AnimatePresence mode="wait" initial={false}>
+            {showWelcome && (
+              <MotionAiscentWelcome
+                key="aiscent-welcome"
+                onStart={handleStart}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'linear' }}
+              />
+            )}
+            {showIdentity && (
+              <MotionAiscentIdentityForm
+                key="aiscent-identity"
+                onSubmit={handleIdentitySubmit}
+                onBack={handleIdentityBack}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'linear' }}
+              />
+            )}
+            {showLive && (
+              <motion.div
+                key="aiscent-session"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'linear' }}
+                className="fixed inset-0 z-20"
+              >
                 <AiscentSessionView
                   activeCampId={activeCampId}
                   completedCampIds={completedCampIds}
                   onEndInterview={handleEndInterview}
                 />
-              )}
-            </motion.div>
-          </RoomContext.Provider>
-        </>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </RoomContext.Provider>
       )}
 
       <Toaster />

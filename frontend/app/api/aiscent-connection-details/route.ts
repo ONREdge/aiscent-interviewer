@@ -27,6 +27,29 @@ export async function POST(req: Request) {
       body?.room_config?.agents?.[0]?.agent_name ?? 'aiscent';
     const sessionUUID: string | null = body?.session_uuid || null;
 
+    // Identity is optional. When present, trim + length-cap each field and
+    // only include non-empty results so the JWT metadata never carries junk.
+    // Matches the client-side caps in aiscent-identity-form.tsx (MAX_NAME,
+    // MAX_EMAIL) so what the user submits is exactly what the agent reads.
+    const identityInput: unknown = body?.identity;
+    function normalizeField(value: unknown, cap: number): string | null {
+      if (typeof value !== 'string') return null;
+      const trimmed = value.trim().slice(0, cap);
+      return trimmed.length > 0 ? trimmed : null;
+    }
+    const firstName =
+      identityInput && typeof identityInput === 'object'
+        ? normalizeField((identityInput as Record<string, unknown>).first_name, 64)
+        : null;
+    const lastName =
+      identityInput && typeof identityInput === 'object'
+        ? normalizeField((identityInput as Record<string, unknown>).last_name, 64)
+        : null;
+    const email =
+      identityInput && typeof identityInput === 'object'
+        ? normalizeField((identityInput as Record<string, unknown>).email, 254)
+        : null;
+
     const participantName = 'aiscent-participant';
     // Embed session_uuid into the identity so the agent can recover both the
     // dispatch type AND the session_uuid from participant.identity even if the
@@ -44,6 +67,9 @@ export async function POST(req: Request) {
     if (sessionUUID) {
       metadata.session_uuid = sessionUUID;
     }
+    if (firstName) metadata.first_name = firstName;
+    if (lastName) metadata.last_name = lastName;
+    if (email) metadata.email = email;
 
     const at = new AccessToken(API_KEY, API_SECRET, {
       identity: participantIdentity,
@@ -75,6 +101,7 @@ export async function POST(req: Request) {
       participantIdentity,
       agentName: agentName ?? null,
       sessionUUID,
+      hasIdentity: Boolean(firstName || lastName || email),
     });
 
     return NextResponse.json(

@@ -206,7 +206,7 @@ export function AiscentAscentPosition({
                 background: '#C9A227',
               }}
             />
-            AISCENT · ASCENT POSITION
+            AiSCENT · AiSCENT POSITION
           </div>
 
           <h1
@@ -223,7 +223,7 @@ export function AiscentAscentPosition({
           >
             {isPreClimb
               ? 'Pre-Climb — the foundation is not yet in place.'
-              : 'Your Ascent Position.'}
+              : 'Your AiSCENT Position.'}
           </h1>
 
           {isDisconnected && !isPreClimb && (
