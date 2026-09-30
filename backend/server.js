@@ -335,6 +335,49 @@ function renderCampScoresTable(campScores) {
   `;
 }
 
+function extractParticipant(payload) {
+  const p = payload && payload.participant;
+  if (!p || typeof p !== 'object') return null;
+  const firstName =
+    typeof p.first_name === 'string' ? p.first_name.trim() : '';
+  const lastName = typeof p.last_name === 'string' ? p.last_name.trim() : '';
+  const email = typeof p.email === 'string' ? p.email.trim() : '';
+  if (!firstName && !lastName && !email) return null;
+  const fullName = [firstName, lastName].filter(Boolean).join(' ');
+  return { firstName, lastName, email, fullName };
+}
+
+function renderParticipantBlock(participant) {
+  if (!participant) return '';
+  const name = escapeHtml(participant.fullName || '(no name provided)');
+  const email = escapeHtml(participant.email || '(no email provided)');
+  return `
+  <div style="margin:0 0 16px 0;padding:12px 16px;background:#f4f7ff;border:1px solid #dbe4ff;border-radius:6px;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#1b3b72;text-transform:uppercase;margin-bottom:4px;">
+      Participant
+    </div>
+    <div style="font-size:15px;color:#14181d;">
+      <strong>${name}</strong> &nbsp;&middot;&nbsp;
+      <a href="mailto:${email}" style="color:#1565e2;text-decoration:none;">${email}</a>
+    </div>
+  </div>`;
+}
+
+// Renders the participant's name as the first content in the email body,
+// followed by a mailto link on the next line. The existing renderParticipantBlock
+// (rendered directly below this header) stays as the mid-body summary card.
+function participantHeader(participant) {
+  if (!participant) return '';
+  const name = escapeHtml(participant.fullName || '(no name provided)');
+  const email = escapeHtml(participant.email || '');
+  return (
+    `<h1 style="margin:0 0 4px 0;font-size:22px;color:#14181d;font-family:Arial,Helvetica,sans-serif;">${name}</h1>` +
+    (email
+      ? `<div style="margin:0 0 16px 0;font-size:14px;"><a href="mailto:${email}" style="color:#1565e2;text-decoration:none;">${email}</a></div>`
+      : '')
+  );
+}
+
 function renderResultsHtml(payload) {
   const sessionUuid = escapeHtml(payload.session_uuid || 'unknown');
   const endReason = escapeHtml(payload.end_reason || 'unknown');
@@ -346,11 +389,15 @@ function renderResultsHtml(payload) {
   const cta = escapeHtml(payload.ascent_position?.cta || '');
   const flags = (payload.sequencing_flags || []).map(escapeHtml).join(', ');
   const campTable = renderCampScoresTable(payload.camp_scores);
+  const participant = extractParticipant(payload);
+  const participantBlock = renderParticipantBlock(participant);
 
   return `<!doctype html>
 <html>
 <body style="font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;line-height:1.5;">
-  <h2 style="margin:0 0 8px 0;">AiSCENT session complete</h2>
+  ${participantHeader(participant)}
+  ${participantBlock}
+  <h2 style="margin:16px 0 8px 0;">AiSCENT session complete</h2>
   <p style="margin:0 0 16px 0;color:#555;">
     <strong>Session:</strong> ${sessionUuid}<br/>
     <strong>End reason:</strong> ${endReason}<br/>
@@ -381,8 +428,11 @@ app.post('/aiscent-session', async (req, res) => {
   const sessionUUID =
     String(payload.session_uuid || 'unknown').trim() || 'unknown';
   const endReason = String(payload.end_reason || 'unknown');
+  const participant = extractParticipant(payload);
   console.log(
-    `📬 session results received for ${sessionUUID} (end_reason=${endReason})`,
+    `📬 session results received for ${sessionUUID} (end_reason=${endReason}, participant=${
+      participant ? `${participant.fullName} <${participant.email}>` : 'none'
+    })`,
   );
 
   const bodyJson = JSON.stringify(payload, null, 2);
@@ -398,16 +448,30 @@ app.post('/aiscent-session', async (req, res) => {
     });
   }
 
+  // Subject prefers a human-readable participant tag when identity is
+  // present, so the operator inbox is grep-able by name/email; falls back
+  // to the session UUID for direct-connect / test flows.
+  const subject = participant
+    ? `AiSCENT — ${participant.fullName || '(no name)'}${
+        participant.email ? ` (${participant.email})` : ''
+      } — ${endReason}`
+    : `AiSCENT session ${sessionUUID} — ${endReason}`;
+
   const msg = {
     to: AISCENT_RESULTS_EMAIL_TO,
     from: {
       email: SENDGRID_FROM_EMAIL,
       name: SENDGRID_FROM_NAME,
     },
-    subject: `AiSCENT session ${sessionUUID} — ${endReason}`,
+    subject,
     html,
     text:
-      `AiSCENT session ${sessionUUID} (end_reason=${endReason}).\n\n` +
+      (participant
+        ? `${participant.fullName || '(no name)'} <${
+            participant.email || '(no email)'
+          }>\n\n`
+        : '') +
+      `AiSCENT session ${sessionUUID} (end_reason=${endReason}).\n` +
       'The full JSON is attached.',
     attachments: [
       {
